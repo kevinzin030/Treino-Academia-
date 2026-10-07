@@ -243,6 +243,39 @@ input:focus,select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(13
 .modal-icon{font-size:42px}.modal-card h2{margin:10px 0}.modal-card p{color:#c5c5ce;line-height:1.55}
 .close-btn{border:0;background:var(--purple);color:#fff;padding:11px 18px;border-radius:10px;font-weight:bold}
 
+
+/* PROGRESSO / RELATÓRIOS */
+.report-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px
+}
+.report-card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px
+}
+.report-card small{display:block;color:var(--muted);font-size:11px;font-weight:bold;text-transform:uppercase}
+.report-card strong{display:block;font-size:25px;margin-top:7px}
+.report-card span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+.report-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:20px}
+.chart{
+  display:flex;align-items:flex-end;gap:10px;height:190px;padding:15px 8px 5px;
+  border-bottom:1px solid var(--border)
+}
+.chart-day{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;min-width:0}
+.chart-value{font-size:10px;color:var(--muted);white-space:nowrap}
+.chart-bar{width:min(34px,70%);min-height:3px;border-radius:7px 7px 2px 2px;background:linear-gradient(180deg,var(--purple2),var(--purple))}
+.chart-label{font-size:11px;color:var(--muted)}
+.report-table-wrap{overflow-x:auto}
+.report-table{width:100%;border-collapse:collapse;min-width:620px}
+.report-table th,.report-table td{padding:12px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:13px}
+.report-table th{color:var(--muted);font-size:11px;text-transform:uppercase}
+.positive{color:#4ade80;font-weight:bold}.negative{color:#ff8098;font-weight:bold}.neutral{color:var(--muted)}
+.progress-note{
+  padding:12px 14px;border-radius:11px;background:#111118;color:var(--muted);font-size:13px;margin-bottom:16px
+}
+.report-empty{text-align:center;color:var(--muted);padding:35px 15px}
+.report-actions{display:flex;gap:10px;flex-wrap:wrap}
+@media(max-width:950px){.report-grid{grid-template-columns:repeat(2,1fr)}.report-layout{grid-template-columns:1fr}}
+@media(max-width:520px){.report-grid{grid-template-columns:1fr}.chart{gap:5px}}
+
 @media(max-width:850px){
   .sidebar{transform:translateX(-100%);transition:.25s}.sidebar.open{transform:translateX(0)}
   .mobile-menu{display:block}.main{margin-left:0;padding:75px 18px 30px}
@@ -303,6 +336,7 @@ input:focus,select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(13
 
     <nav class="nav">
       <button data-page="dashboard" class="active">🏠 Dashboard</button>
+      <button data-page="progress">📈 Progresso</button>
       <button data-page="profile">👤 Meu perfil</button>
       <button data-page="editor">⚙️ Editar treinos</button>
     </nav>
@@ -329,6 +363,19 @@ input:focus,select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(13
         </section>
 
         <section class="grid" id="workoutGrid"></section>
+      </section>
+
+      <!-- PROGRESSO / RELATÓRIOS -->
+      <section class="page" id="progressPage">
+        <div class="topbar">
+          <div>
+            <h1>Meu progresso</h1>
+            <p>Relatórios gerados automaticamente a partir dos pesos e repetições salvos.</p>
+          </div>
+          <span class="badge">📈 Evolução</span>
+        </div>
+
+        <div id="reportContent"></div>
       </section>
 
       <!-- PERFIL -->
@@ -480,6 +527,7 @@ function openApp(){
   renderDashboard();
   renderDaySelector();
   renderEditor();
+  renderProgressReport();
 }
 
 function refreshUserUI(){
@@ -523,6 +571,7 @@ document.querySelectorAll(".nav button").forEach(btn=>{
     btn.classList.add("active");
     document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
     document.getElementById(page+"Page").classList.add("active");
+    if(page==="progress") renderProgressReport();
     document.getElementById("sidebar").classList.remove("open");
   });
 });
@@ -728,6 +777,170 @@ function renderDashboard(){
   const percent=total?Math.round(doneTotal/total*100):0;
   document.getElementById("progressText").textContent=percent+"%";
   document.getElementById("progressFill").style.width=percent+"%";
+}
+
+
+function getAllHistory(){
+  const state=getProgress();
+  const details=state.details||{};
+  const items=[];
+  workouts.forEach(w=>{
+    w.exercises.forEach((ex,i)=>{
+      const key=`${w.id}-${i}`;
+      const d=details[key];
+      if(!d || !Array.isArray(d.history)) return;
+      d.history.forEach(h=>{
+        items.push({
+          key,day:w.day,exercise:ex[0],
+          date:h.date,maxWeight:Number(h.maxWeight)||0,
+          volume:Number(h.volume)||0
+        });
+      });
+    });
+  });
+  return items.sort((a,b)=>new Date(a.date)-new Date(b.date));
+}
+
+function formatKg(n){
+  if(!Number.isFinite(n) || n<=0) return "—";
+  return (Number.isInteger(n)?n:n.toFixed(1))+" kg";
+}
+
+function formatDate(date){
+  return new Date(date).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"});
+}
+
+function renderProgressReport(){
+  const root=document.getElementById("reportContent");
+  if(!root)return;
+
+  const history=getAllHistory();
+
+  if(!history.length){
+    root.innerHTML=`
+      <div class="panel report-empty">
+        <div style="font-size:42px">📊</div>
+        <h2>Ainda não há dados suficientes</h2>
+        <p>Abra um exercício no Dashboard, informe as repetições e o peso de cada série e clique em <strong>Salvar cargas deste exercício</strong>.</p>
+      </div>`;
+    return;
+  }
+
+  const uniqueDates=[...new Set(history.map(x=>new Date(x.date).toLocaleDateString("en-CA")))];
+  const bestWeight=Math.max(...history.map(x=>x.maxWeight),0);
+  const totalVolume=history.reduce((sum,x)=>sum+x.volume,0);
+  const exerciseKeys=[...new Set(history.map(x=>x.key))];
+
+  const latestByKey=new Map();
+  history.forEach(x=>latestByKey.set(x.key,x));
+  const firstByKey=new Map();
+  history.forEach(x=>{if(!firstByKey.has(x.key))firstByKey.set(x.key,x)});
+
+  let improved=0;
+  exerciseKeys.forEach(key=>{
+    const first=firstByKey.get(key), last=latestByKey.get(key);
+    if(last.maxWeight>first.maxWeight)improved++;
+  });
+
+  const now=new Date();
+  const last7=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(now);
+    d.setHours(0,0,0,0);
+    d.setDate(d.getDate()-i);
+    const key=d.toLocaleDateString("en-CA");
+    const volume=history.filter(x=>new Date(x.date).toLocaleDateString("en-CA")===key)
+      .reduce((sum,x)=>sum+x.volume,0);
+    last7.push({
+      label:d.toLocaleDateString("pt-BR",{weekday:"short"}).replace(".",""),
+      volume
+    });
+  }
+  const maxDay=Math.max(...last7.map(x=>x.volume),1);
+
+  const rows=[...latestByKey.values()].sort((a,b)=>b.maxWeight-a.maxWeight);
+
+  root.innerHTML=`
+    <div class="report-grid">
+      <div class="report-card"><small>Registros salvos</small><strong>${history.length}</strong><span>${uniqueDates.length} dia(s) com atividade</span></div>
+      <div class="report-card"><small>Peso máximo</small><strong>${formatKg(bestWeight)}</strong><span>Maior carga registrada</span></div>
+      <div class="report-card"><small>Volume acumulado</small><strong>${Math.round(totalVolume).toLocaleString("pt-BR")} kg</strong><span>Somatório peso × repetições</span></div>
+      <div class="report-card"><small>Exercícios evoluindo</small><strong>${improved}/${exerciseKeys.length}</strong><span>Comparado ao primeiro registro</span></div>
+    </div>
+
+    <div class="progress-note">
+      <strong>Como o relatório funciona:</strong> cada vez que você salva as cargas de um exercício, o sistema registra a data, o maior peso e o volume daquele registro. Assim você consegue acompanhar sua evolução ao longo dos treinos.
+    </div>
+
+    <div class="report-layout">
+      <div class="panel">
+        <h2>Volume — últimos 7 dias</h2>
+        <p class="panel-sub">Volume = peso × repetições de todas as séries salvas.</p>
+        <div class="chart">
+          ${last7.map(x=>`
+            <div class="chart-day">
+              <span class="chart-value">${x.volume?Math.round(x.volume)+" kg":"—"}</span>
+              <div class="chart-bar" style="height:${Math.max(3,Math.round((x.volume/maxDay)*145))}px"></div>
+              <span class="chart-label">${x.label}</span>
+            </div>`).join("")}
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Resumo da evolução</h2>
+        <p class="panel-sub">Comparação entre seu primeiro e seu último registro.</p>
+        ${exerciseKeys.length?exerciseKeys.slice(0,8).map(key=>{
+          const first=firstByKey.get(key),last=latestByKey.get(key);
+          const diff=last.maxWeight-first.maxWeight;
+          const cls=diff>0?"positive":diff<0?"negative":"neutral";
+          const sign=diff>0?"+":"";
+          return `<div style="padding:11px 0;border-bottom:1px solid var(--border)">
+            <strong>${escapeHtml(last.exercise)}</strong>
+            <div style="color:var(--muted);font-size:12px;margin-top:4px">
+              ${formatKg(first.maxWeight)} → ${formatKg(last.maxWeight)}
+              <span class="${cls}" style="margin-left:8px">${sign}${diff?Number(diff.toFixed(1)):"0"} kg</span>
+            </div>
+          </div>`;
+        }).join(""):`<div class="report-empty">Sem registros.</div>`}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap">
+        <div>
+          <h2>Relatório por exercício</h2>
+          <p class="panel-sub">Último peso, melhor peso, volume e data do registro.</p>
+        </div>
+        <div class="report-actions">
+          <button class="secondary" type="button" id="refreshReport">↻ Atualizar relatório</button>
+        </div>
+      </div>
+      <div class="report-table-wrap">
+        <table class="report-table">
+          <thead><tr><th>Exercício</th><th>Dia</th><th>Último peso</th><th>Melhor peso</th><th>Variação</th><th>Volume último</th><th>Último registro</th></tr></thead>
+          <tbody>
+          ${rows.map(last=>{
+            const first=firstByKey.get(last.key);
+            const best=Math.max(...history.filter(x=>x.key===last.key).map(x=>x.maxWeight),0);
+            const diff=last.maxWeight-first.maxWeight;
+            const cls=diff>0?"positive":diff<0?"negative":"neutral";
+            const sign=diff>0?"+":"";
+            return `<tr>
+              <td><strong>${escapeHtml(last.exercise)}</strong></td>
+              <td>${last.day}</td>
+              <td>${formatKg(last.maxWeight)}</td>
+              <td>${formatKg(best)}</td>
+              <td class="${cls}">${sign}${Number(diff.toFixed(1))} kg</td>
+              <td>${last.volume?Math.round(last.volume).toLocaleString("pt-BR")+" kg":"—"}</td>
+              <td>${formatDate(last.date)}</td>
+            </tr>`;
+          }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  document.getElementById("refreshReport")?.addEventListener("click",renderProgressReport);
 }
 
 function renderDaySelector(){
