@@ -577,6 +577,24 @@ document.getElementById("loginForm").addEventListener("submit",e=>{
   openApp();
 });
 
+document.getElementById("feedbackForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const entries=JSON.parse(localStorage.getItem("pplFeedback")||"[]");
+  entries.push({
+    userId:currentUserId,
+    name:displayName(),
+    type:document.getElementById("feedbackType").value,
+    rating:Number(document.getElementById("feedbackRating").value),
+    message:document.getElementById("feedbackMessage").value.trim(),
+    date:new Date().toISOString()
+  });
+  localStorage.setItem("pplFeedback",JSON.stringify(entries));
+  document.getElementById("feedbackForm").reset();
+  const notice=document.getElementById("feedbackNotice");
+  notice.style.display="block";
+  setTimeout(()=>notice.style.display="none",3000);
+});
+
 document.getElementById("logoutBtn").addEventListener("click",()=>{
   sessionStorage.removeItem("pplCurrentUser");
   currentUserId=null;
