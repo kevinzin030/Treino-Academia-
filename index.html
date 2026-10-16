@@ -542,6 +542,36 @@ let currentUserId=sessionStorage.getItem("pplCurrentUser");
 let selectedDay="segunda";
 
 function saveUsers(){localStorage.setItem("pplUsers",JSON.stringify(users))}
+function showLoginScreen(){
+  document.getElementById("registerScreen").classList.add("hidden");
+  document.getElementById("appScreen").classList.add("hidden");
+  document.getElementById("loginScreen").classList.remove("hidden");
+}
+document.getElementById("showRegister").addEventListener("click",()=>{
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("registerScreen").classList.remove("hidden");
+});
+document.getElementById("showLogin").addEventListener("click",showLoginScreen);
+document.getElementById("registerForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const name=document.getElementById("registerName").value.trim();
+  const email=document.getElementById("registerEmail").value.trim().toLowerCase();
+  const password=document.getElementById("registerPassword").value;
+  const error=document.getElementById("registerError");
+  if(name.length<2){error.textContent="Informe um nome válido.";error.style.display="block";return}
+  if(password.length<6){error.textContent="A senha precisa ter pelo menos 6 caracteres.";error.style.display="block";return}
+  if(Object.values(users).some(u=>(u.email||"").trim().toLowerCase()===email)){
+    error.textContent="Já existe uma conta com esse e-mail.";error.style.display="block";return;
+  }
+  const id="user_"+Date.now().toString(36);
+  users[id]={name:name,email:email,password:password,photo:""};
+  saveUsers();
+  currentUserId=id;
+  sessionStorage.setItem("pplCurrentUser",id);
+  error.style.display="none";
+  document.getElementById("registerForm").reset();
+  openApp();
+});
 function saveWorkouts(){localStorage.setItem("pplWorkouts",JSON.stringify(workouts))}
 function progressKey(){return "pplProgress_"+currentUserId}
 function getProgress(){return JSON.parse(localStorage.getItem(progressKey())||"{}")}
@@ -560,6 +590,7 @@ function putAvatar(el,photo,name){
 function openApp(){
   if(!currentUserId || !users[currentUserId]) return;
   document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("registerScreen").classList.add("hidden");
   document.getElementById("appScreen").classList.remove("hidden");
   refreshUserUI();
   renderDashboard();
@@ -580,9 +611,9 @@ function refreshUserUI(){
 
 document.getElementById("loginForm").addEventListener("submit",e=>{
   e.preventDefault();
-  const name=document.getElementById("loginUser").value.trim().toLowerCase();
+  const identity=document.getElementById("loginUser").value.trim().toLowerCase();
   const pass=document.getElementById("loginPass").value;
-  const found=Object.entries(users).find(([id,u])=>u.name.trim().toLowerCase()===name && u.password===pass);
+  const found=Object.entries(users).find(([id,u])=>(u.name.trim().toLowerCase()===identity || (u.email||"").trim().toLowerCase()===identity) && u.password===pass);
   if(!found){
     document.getElementById("loginError").style.display="block";
     return;
@@ -616,8 +647,7 @@ document.getElementById("feedbackForm").addEventListener("submit",e=>{
 document.getElementById("logoutBtn").addEventListener("click",()=>{
   sessionStorage.removeItem("pplCurrentUser");
   currentUserId=null;
-  document.getElementById("appScreen").classList.add("hidden");
-  document.getElementById("loginScreen").classList.remove("hidden");
+  showLoginScreen();
 });
 
 document.querySelectorAll(".nav button").forEach(btn=>{
