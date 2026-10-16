@@ -313,8 +313,26 @@ input:focus,select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(13
       <label class="field-label">Senha</label>
       <input id="loginPass" type="password" placeholder="Digite sua senha" required>
       <button class="primary full">ENTRAR</button>
-      <div class="error" id="loginError">Usuário ou senha incorretos.</div>
+      <div class="error" id="loginError">Usuário/e-mail ou senha incorretos.</div>
     </form>
+    <p style="text-align:center;color:var(--muted);font-size:14px;margin-top:18px">Ainda não tem conta? <button type="button" id="showRegister" style="border:0;background:none;color:#c4a9ff;font-weight:bold">Criar cadastro</button></p>
+  </div>
+</section>
+
+<section class="login-screen hidden" id="registerScreen">
+  <div class="login-card">
+    <div class="logo"><div class="icon">🏋️</div><h1>TREINO <span>PPL</span></h1><p>Crie sua conta para acompanhar seus treinos</p></div>
+    <form id="registerForm">
+      <label class="field-label" for="registerName">Nome</label>
+      <input id="registerName" type="text" placeholder="Seu nome completo" maxlength="80" required>
+      <label class="field-label" for="registerEmail">E-mail</label>
+      <input id="registerEmail" type="email" placeholder="voce@email.com" maxlength="160" required>
+      <label class="field-label" for="registerPassword">Senha</label>
+      <input id="registerPassword" type="password" placeholder="Mínimo de 6 caracteres" minlength="6" required>
+      <button class="primary full" type="submit">CRIAR CONTA</button>
+      <div class="error" id="registerError"></div>
+    </form>
+    <p style="text-align:center;color:var(--muted);font-size:14px;margin-top:18px">Já tem uma conta? <button type="button" id="showLogin" style="border:0;background:none;color:#c4a9ff;font-weight:bold">Fazer login</button></p>
   </div>
 </section>
 
