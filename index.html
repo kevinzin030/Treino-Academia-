@@ -34,6 +34,7 @@ input,select{
   width:100%;padding:13px 14px;border-radius:11px;border:1px solid var(--border);
   background:#0e0e14;color:white;outline:none
 }
+textarea{width:100%;min-height:145px;padding:13px 14px;border-radius:11px;border:1px solid var(--border);background:#0e0e14;color:white;outline:none;font:inherit;resize:vertical}
 input:focus,select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(139,92,246,.12)}
 .primary{
   border:0;border-radius:12px;padding:13px 18px;font-weight:bold;color:#fff;
@@ -412,6 +413,24 @@ input:focus,select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(13
               <div class="notice" id="profileNotice">Perfil atualizado com sucesso!</div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- FEEDBACK -->
+      <section class="page" id="feedbackPage">
+        <div class="topbar"><div><h1>Feedback do aplicativo</h1><p>Sua opinião ajuda a melhorar o PPL.</p></div><span class="badge">💬 Sua opinião importa</span></div>
+        <div class="panel">
+          <h2>Conte para nós</h2><p class="panel-sub">Envie uma sugestão, avaliação ou relate um problema.</p>
+          <form id="feedbackForm">
+            <div class="form-group"><label for="feedbackType">Tipo de feedback</label>
+              <select id="feedbackType" required><option>Sugestão</option><option>Problema/erro</option><option>Elogio</option><option>Outro</option></select>
+            </div>
+            <div class="form-group" style="margin-top:16px"><label for="feedbackRating">Avaliação</label>
+              <select id="feedbackRating" required><option value="5">⭐⭐⭐⭐⭐ — Excelente</option><option value="4">⭐⭐⭐⭐ — Muito bom</option><option value="3">⭐⭐⭐ — Bom</option><option value="2">⭐⭐ — Pode melhorar</option><option value="1">⭐ — Ruim</option></select>
+            </div>
+            <div class="form-group" style="margin-top:16px"><label for="feedbackMessage">Mensagem</label><textarea id="feedbackMessage" maxlength="1500" placeholder="Escreva sua sugestão ou descreva o problema..." required></textarea></div>
+            <button class="primary full" type="submit">Enviar feedback</button><div class="notice" id="feedbackNotice">Feedback salvo neste dispositivo. Obrigado!</div>
+          </form>
         </div>
       </section>
 
